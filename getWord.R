@@ -5,6 +5,9 @@ library(stringr)
 # Define the path to the Word file
 path <- "Designing Products People Love_ - Scott Hurff.docx"
 datelang <- "eng"
+
+
+
 getGooglePlay <- function(path, datelang) {
 # Read the Word file
 doc <- read_docx(path)
