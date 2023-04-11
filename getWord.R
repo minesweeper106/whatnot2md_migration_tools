@@ -28,8 +28,9 @@ text<-text[row_num:length(text$text), ]
 
 remove_dates <- function(text) {
   # Define the regular expression pattern for dates
+#pol date:  
  # pattern <- "\\d{1,2}\\s\\p{L}+\\s\\d{4}"
-#ang date
+#ang date:
 pattern <- "[A-Za-z]+ \\d{1,2}, \\d{4}"
   # Replace the matching pattern with an empty string
   text_mod <- str_replace(text, pattern, " Page ")
