@@ -2,12 +2,8 @@
 library(officer)
 library(dplyr)
 library(stringr)
-# Define the path to the Word file
-#path <- "Making Money SimplePeter Lazaroff.docx"
-#datelang <- "eng"
 
-
-getGooglePlay <- function(path, datelang) {
+getGooglePlay <- function(path) {
 
 doc <- read_docx(path)
 # Extract the text from the Word file
@@ -24,7 +20,30 @@ text$text[text$style_name == "heading 2"] <- paste("###", text$text[text$style_n
 row_num <- which(startsWith(text$text, "##"))[1]
 text<-text[row_num:length(text$text), ]
 
-remove_dates <- function(text, ...) {
+
+find_date_lang_format <- function(sample=text$text[2]) {
+  
+  langs<-c('pl', 'eng')
+  
+  is_pl <- FALSE 
+  score_pl <- unlist(gregexpr("\\d{1,2}\\s\\p{L}+\\s\\d{4}", sample, perl=TRUE))
+  
+  is_eng <- FALSE 
+  score_eng <- unlist(gregexpr("[A-Za-z]+ \\d{1,2}, \\d{4}", sample, perl=TRUE))
+  
+  if (score_pl > 0) {
+    is_pl <- TRUE
+  } else if (score_eng > 0) {
+    is_eng <- TRUE
+  }
+  
+  datelang <- langs[c(is_pl,is_eng)]
+  return(datelang)
+}
+
+format_d <- find_date_lang_format()
+
+remove_dates <- function(text, datelang=format_d) {
 # Define the regular expression pattern for dates
 #pol date:  
 # pattern <- "\\d{1,2}\\s\\p{L}+\\s\\d{4}"
@@ -50,6 +69,19 @@ remove_dates <- function(text, ...) {
   return(text_mod)
 }
 text$text<-unlist(lapply(text$text, remove_dates))
+
+remove_links <- function(text) {
+  match<-unlist(gregexpr('HYPERLINK[^"]+"', text, perl=TRUE))
+  if (match > 0) {
+    text_clean <- gsub('\\s(HYPERLINK)\\s\"\\w.*\"\\s','',text)
+    return(text_clean)
+  } else {
+    return(text)
+  }
+  }
+
+text$text<-unlist(lapply(text$text,remove_links))
+
 
 quote_transform <- function(text) {
   # Check if the string starts with "##"
