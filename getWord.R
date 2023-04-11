@@ -1,17 +1,15 @@
-# Load the officer package
+
 library(officer)
 library(dplyr)
 library(stringr)
 # Define the path to the Word file
-path <- "Designing Products People Love_ - Scott Hurff.docx"
-datelang <- "eng"
-
+#path <- "Making Money SimplePeter Lazaroff.docx"
+#datelang <- "eng"
 
 
 getGooglePlay <- function(path, datelang) {
-# Read the Word file
-doc <- read_docx(path)
 
+doc <- read_docx(path)
 # Extract the text from the Word file
 text <- docx_summary(doc)
 
@@ -26,12 +24,22 @@ text$text[text$style_name == "heading 2"] <- paste("###", text$text[text$style_n
 row_num <- which(startsWith(text$text, "##"))[1]
 text<-text[row_num:length(text$text), ]
 
-remove_dates <- function(text) {
-  # Define the regular expression pattern for dates
+remove_dates <- function(text, ...) {
+# Define the regular expression pattern for dates
 #pol date:  
- # pattern <- "\\d{1,2}\\s\\p{L}+\\s\\d{4}"
+# pattern <- "\\d{1,2}\\s\\p{L}+\\s\\d{4}"
 #ang date:
-pattern <- "[A-Za-z]+ \\d{1,2}, \\d{4}"
+#pattern <- "[A-Za-z]+ \\d{1,2}, \\d{4}"
+  switch(datelang,
+         'pl' = {
+           pattern <- "\\d{1,2}\\s\\p{L}+\\s\\d{4}"
+         },
+         'eng' = {
+           pattern <- "[A-Za-z]+ \\d{1,2}, \\d{4}"
+         },
+         stop("specify 'pl' or 'eng'")
+  )
+  
   # Replace the matching pattern with an empty string
   text_mod <- str_replace(text, pattern, " Page ")
   
