@@ -3,9 +3,11 @@ library(officer)
 library(dplyr)
 library(stringr)
 
+proj_path <- getwd()
+
 getGooglePlay <- function(path) {
 
-doc <- read_docx(path)
+doc <- read_docx(paste0(proj_path,'/INPUT/',path))
 # Extract the text from the Word file
 text <- docx_summary(doc)
 
@@ -102,7 +104,9 @@ quote_transform <- function(text) {
 
 text$text<-unlist(lapply(text$text, quote_transform))
 my_text <-paste(text$text, collapse = "\n\n")
-output_path <- paste0("~/rdev/OUTPUT/",path, ".md") 
+title<- gsub('\\.docx','',path)
+title_md<- gsub('\\.docx','.md',path)
+output_path <- paste0(proj_path,"/OUTPUT/",title, ".md") 
 writeLines(my_text, output_path)
 return("DONE!")
 } 
