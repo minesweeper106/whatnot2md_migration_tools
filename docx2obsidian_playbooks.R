@@ -4,10 +4,12 @@ library(dplyr)
 library(stringr)
 
 proj_path <- getwd()
+input_path <- 'INPUT'
+output_path <- 'OUTPUT'
+getGooglePlay <- function(title_docx, admonitions = TRUE) {
 
-getGooglePlay <- function(path) {
-
-doc <- read_docx(paste0(proj_path,'/INPUT/',path))
+#doc <- read_docx(paste0(proj_path,'/INPUT/',path))
+doc <- read_docx(file.path(proj_path,input_path,title_docx))
 # Extract the text from the Word file
 text <- docx_summary(doc)
 
@@ -17,12 +19,12 @@ text <- replace(text, is.na(text), "")
 text <- text %>% filter(text!='')
 text <- text[2:4]
 
-
+# Chapters as Headers
 text$text[text$style_name == "heading 2"] <- paste("###", text$text[text$style_name == "heading 2"]," \n", sep = " ")
 row_num <- which(startsWith(text$text, "##"))[1]
 text<-text[row_num:length(text$text), ]
 
-
+# function to determine date format 
 find_date_lang_format <- function(sample=text$text[2]) {
   
   langs<-c('pl', 'eng')
@@ -42,15 +44,11 @@ find_date_lang_format <- function(sample=text$text[2]) {
   datelang <- langs[c(is_pl,is_eng)]
   return(datelang)
 }
-
 format_d <- find_date_lang_format()
 
+# Function to remove dates from annotations
 remove_dates <- function(text, datelang=format_d) {
 # Define the regular expression pattern for dates
-#pol date:  
-# pattern <- "\\d{1,2}\\s\\p{L}+\\s\\d{4}"
-#ang date:
-#pattern <- "[A-Za-z]+ \\d{1,2}, \\d{4}"
   switch(datelang,
          'pl' = {
            pattern <- "\\d{1,2}\\s\\p{L}+\\s\\d{4}"
@@ -72,6 +70,7 @@ remove_dates <- function(text, datelang=format_d) {
 }
 text$text<-unlist(lapply(text$text, remove_dates))
 
+# Function to remove link from annotations
 remove_links <- function(text) {
   match<-unlist(gregexpr('HYPERLINK[^"]+"', text, perl=TRUE))
   if (match > 0) {
@@ -82,31 +81,38 @@ remove_links <- function(text) {
   }
   }
 
-text$text<-unlist(lapply(text$text,remove_links))
 
 
-quote_transform <- function(text) {
-  # Check if the string starts with "##"
+
+quote_transform <- function(text,...) {
+  # Ignore headings
   if (substr(text, 1, 2) == "##") {
     return(text)
   }
   
-  # Match the page number and text, and capture them in separate groups
+  # Match the page number and quote, and capture them in separate groups
   match <- gregexpr("Page\\s\\d+\\s*(.*?)($|\n(?=Page))", text, perl=TRUE)
   page_nums <- regmatches(text, match)[[1]]
   text <- regmatches(text, match, invert=TRUE)[[1]]
   
+  if (admonitions==TRUE){
+    quote_format<-"> [!quote] "
+  } else {
+    quote_format<-"> "
+  }
+  
   # Format the quotes and page numbers
-  quotes <- paste0("> [!quote] ", page_nums, "\n> ", text[1])
+  quotes <- paste0(quote_format, page_nums, "\n> ", text[1])
   return(paste(quotes, collapse="\n\n"))
 }
 
-
+text$text<-unlist(lapply(text$text,remove_links))
 text$text<-unlist(lapply(text$text, quote_transform))
-my_text <-paste(text$text, collapse = "\n\n")
-title<- gsub('\\.docx','',path)
-title_md<- gsub('\\.docx','.md',path)
-output_path <- paste0(proj_path,"/OUTPUT/",title, ".md") 
-writeLines(my_text, output_path)
-return("DONE!")
+md_text <-paste(text$text, collapse = "\n\n")
+
+title<- gsub('\\.docx','',title_docx)
+title_md<- gsub('\\.docx','.md',title_docx)
+
+writeLines(md_text, file.path(proj_path,output_path,title_md))
+print("DONE!")
 } 
