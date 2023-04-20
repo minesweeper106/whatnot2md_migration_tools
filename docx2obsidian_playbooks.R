@@ -260,7 +260,10 @@ WHERE books.title LIKE '",
   oc <- json_object_bn[["bibs"]][["marc"]][["fields"]][[1]][["035"]][3]
   uoc <- unlist(oc, recursive = TRUE, use.names = FALSE)
   ocl <- grep("^\\(OCoLC\\)", uoc, value = TRUE)
-  meta$oclc <- substr(ocl, start = 8, stop = 100)
+  if (length(ocl)!=0) {
+    meta$oclc <- substr(ocl, start = 8, stop = 100)
+  }
+ 
   
   plc <-
     json_object_bn[["bibs"]][["marc"]][["fields"]][[1]][["260"]][["subfields"]]
