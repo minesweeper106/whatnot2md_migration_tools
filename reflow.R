@@ -54,10 +54,10 @@ quote_transform <- function(text, admonitions) {
 
 getGooglePlay <- function(title_docx, admonitions = TRUE) {
   doc <- read_docx(file.path(proj_path, input_path, title_docx))
-  text <- docx_summary(doc) %>%
-    replace(is.na(.), "") %>%
-    filter(. != '') %>%
-    .[2:4]
+  text <- docx_summary(doc)
+  text <- replace(text,is.na(text),"")
+  text <- filter(text, text != '')
+  text <- text[2:4]
   
   text$text[text$style_name == "heading 2"] <- paste("###", text$text[text$style_name == "heading 2"], " \n", sep = " ")
   row_num <- which(startsWith(text$text, "##"))[1]
