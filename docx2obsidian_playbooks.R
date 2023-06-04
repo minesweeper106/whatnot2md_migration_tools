@@ -268,8 +268,14 @@ WHERE books.title LIKE '",
   plc <-
     json_object_bn[["bibs"]][["marc"]][["fields"]][[1]][["260"]][["subfields"]]
   plb <- unlist(plc, recursive = TRUE, use.names = FALSE)
-  pub_place <- plb[1]
-  meta$pub_place <- substring(pub_place, 1, nchar(pub_place) - 2)
+  if (length(plb)!=0) {
+    pub_place <- plb[1]
+    meta$pub_place <- substring(pub_place, 1, nchar(pub_place) - 2)
+  } else {
+    meta$pub_place <- ''
+  }
+ 
+
   
   if (!is.na(meta$original_language)) {
     tl <-
@@ -367,7 +373,6 @@ WHERE books.title LIKE '",
       "---\n# NOTE-META\ncreated: ",as.character(today()),"\n",
       "type: 'reference'\n",
       "subtype: 'book'\n",
-      "status: 'DRAFT'\n",
       "tags: [Wiedza/Streszczenia, ]\n",
       "alias: \n",
       "#\n"
@@ -377,21 +382,21 @@ WHERE books.title LIKE '",
       "title: '",
       meta$title,
       "'\n",
-      "shorttitle: ",
+      "shorttitle: '",
       meta$short_title,
-      "\n",
-      "original_title: ",
+      "'\n",
+      "original_title: '",
       meta$original_title,
-      "\n",
+      "'\n",
       "author: '",
       meta$author,
       "'\n",
       "coauthors: ",
       meta$coauthors,
       "\n",
-      "translator: ",
+      "translator: '",
       meta$translator,
-      "\n",
+      "'\n",
       "subject: \n",
       "language: ",
       meta$language,
@@ -408,9 +413,9 @@ WHERE books.title LIKE '",
       "pub_place: ",
       meta$pub_place,
       "\n",
-      "publisher: ",
+      "publisher: '",
       meta$publisher,
-      "\n",
+      "'\n",
       "ISBN: ",
       meta$isbn,
       "\n",
