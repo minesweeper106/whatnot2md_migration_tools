@@ -7,6 +7,7 @@ library(stringr)
 library(dbplyr)
 library(RSQLite)
 library(jsonlite)
+library(glue)
 
 proj_path <- getwd()
 input_path <- 'INPUT'
@@ -334,103 +335,58 @@ WHERE books.title LIKE '",
   #Conditionality on translator
   fmatter_constructor <- function() {
     
-    #----TODO citation as function----
-    if (meta$original_language == '') {
-      citation <-
-        paste0(
-          "'",
-          meta$author,
-          ", ",
-          meta$title,
-          ", ",
-          meta$publisher,
-          ", ",
-          meta$pub_place,
-          " ",
-          meta$pub_year,
-          "'"
-        )
-    } else {
-      citation <-
-        paste0(
-          "'",
-          meta$author,
-          ", ",
-          meta$title,
-          ", tłum. ",
-          meta$translator,
-          ", ",
-          meta$publisher,
-          ", ",
-          meta$pub_place,
-          " ",
-          meta$pub_year,
-          "'"
-        )
+    citation <- function() {
+      if (meta$original_language == '') {
+        citation <-
+          glue('"{meta$author}, {meta$title}, {meta$publisher}, {meta$pub_place} {meta$pub_year}"') 
+      } else {
+        citation <-
+          glue('"{meta$author}, {meta$title}, tłum. {meta$translator}, {meta$publisher}, {meta$pub_place} {meta$pub_year}"') 
+      }
     }
+    citation <- citation()
     
-    note_meta <- paste0(
-      "---\n# NOTE-META\ncreated: ",as.character(today()),"\n",
-      "type: 'reference'\n",
-      "subtype: 'book'\n",
-      "tags: [Wiedza/Streszczenia, ]\n",
-      "alias: \n",
-      "#\n"
-    )
-    object_meta <- paste0(
-      "# OBJECT-META\n",
-      "title: '",
-      meta$title,
-      "'\n",
-      "shorttitle: '",
-      meta$short_title,
-      "'\n",
-      "original_title: '",
-      meta$original_title,
-      "'\n",
-      "author: '",
-      meta$author,
-      "'\n",
-      "coauthors: ",
-      meta$coauthors,
-      "\n",
-      "translator: '",
-      meta$translator,
-      "'\n",
-      "subject: \n",
-      "language: ",
-      meta$language,
-      "\n",
-      "original_language: ",
-      meta$original_language,
-      "\n",
-      "pages: ",
-      meta$pages,
-      "\n",
-      "pub_date: ",
-      meta$pub_date,
-      "\n",
-      "pub_place: ",
-      meta$pub_place,
-      "\n",
-      "publisher: '",
-      meta$publisher,
-      "'\n",
-      "ISBN: ",
-      meta$isbn,
-      "\n",
-      "OCLC: ",
-      meta$oclc,
-      "\n",
-      "#\n"
-    )
-    sub_meta <- paste0("# SUB-META\n",
-                       "read: TRUE\n",
-                       "read_year: \n",
-                       "citation: ",
-                       citation,
-                       "\n---\n")
-    fmatter <- paste0(note_meta, object_meta, sub_meta)
+    note_meta <- glue('
+      ---
+      # NOTE-META
+      created: 222
+      type: reference
+      subtype: book
+      tags: [Wiedza/Streszczenia, ]
+      alias:
+      #
+    ')
+    object_meta <- glue('
+      # OBJECT-META
+      title: "{meta$title}"
+      shorttitle: "{meta$short_title}"
+      original_title: "{meta$original_title}"
+      author: "{meta$author}"
+      coauthors: "{meta$coauthors}"
+      translator: "{meta$translator}"
+      subject: ""
+      language: "{meta$language}"
+      original_language: "{meta$original_language}"
+      pages: {meta$pages}
+      pub_date: {meta$pub_date}
+      pub_place: "{meta$pub_place}"
+      publisher: "{meta$publisher}"
+      ISBN: {meta$isbn}
+      OCLC: {meta$oclc}
+      #
+    ')
+    sub_meta <- glue('
+      # SUB-META
+      read: TRUE
+      read_year:
+      citation: {citation}
+     ---
+    ')
+    fmatter <- glue('
+    {note_meta}
+    {object_meta}
+    {sub_meta}
+    ')
   }
   #Exec
   fmatter <- fmatter_constructor()
