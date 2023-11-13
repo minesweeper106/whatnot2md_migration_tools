@@ -1,0 +1,69 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(httr)
+library(xml2)
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+```
+
+```{r}
+url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Narodziny+Fundacji"
+response <- httr::GET(url)
+content <- httr::content(response, "text")
+```
+
+```{r}
+xml_data <- xml2::read_xml(content)
+
+ns <- xml2::xml_ns_rename(xml2::xml_ns(xml_data), d1 = "marc")
+
+records <- xml2::xml_find_all(xml_data, ".//marc:record", ns)
+```
+
+```{r}
+parse_field <- function(field) {
+  tag <- xml2::xml_attr(field, "tag")
+  #ind1 <- xml2::xml_attr(field, "ind1")
+  #ind2 <- xml2::xml_attr(field, "ind2")
+  subfields <- xml2::xml_find_all(field, ".//marc:subfield", ns)
+  
+  subfields_data <- map_df(subfields, function(subfield) {
+    code <- xml2::xml_attr(subfield, "code")
+    value <- xml2::xml_text(subfield)
+    tibble(code = code, value = value)
+  })
+
+  tibble(tag = tag, subfields = list(subfields_data))
+}
+
+parsed_records <- map_df(records, function(record) {
+  controlfields <- xml2::xml_find_all(record, ".//marc:controlfield", ns)
+  datafields <- xml2::xml_find_all(record, ".//marc:datafield", ns)
+  
+  all_fields <- c(controlfields, datafields)
+
+  fields_data <- map_df(all_fields, parse_field)
+
+  tibble(fields = list(fields_data))
+})
+```
+
+```{r}
+#parsed_records<-parsed_records[[1]][[1]]
+# Add a record identifier
+parsed_records <- parsed_records %>%
+  mutate(record_id = row_number())
+
+# Flatten the nested tibble
+flattened <- parsed_records %>%
+  unnest(fields) %>%
+  unnest(cols = subfields) %>%
+  select(record_id, tag, code, value)
+```
