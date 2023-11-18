@@ -14,7 +14,8 @@ library(purrr)
 ```
 
 ```{r}
-url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Księga+Zachwytów"
+#url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?kind=książka&amp;title=Krytyka+czystego+rozumu"
+url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Atomowe+Nawyki"
 response <- httr::GET(url)
 content <- httr::content(response, "text")
 ```
@@ -87,7 +88,8 @@ author <- flattened %>%
 title <- flattened %>%
   filter(tag == "245", code == "a") %>%
   pull(value) %>%
-  str_remove("/$") %>% # Removes the slash at the end of the string if present 
+  str_remove("/$") %>%
+  str_remove(":$") %>%# Removes the slash at the end of the string if present 
   str_trim() 
 
 subtitle <- flattened %>%
@@ -170,19 +172,27 @@ series_volume <- flattened %>%
 
 full_title <- flattened %>%
   filter(tag == "245") %>%
+  group_by(tag) %>%
   summarise(
-    value_a = if(any(code == "a")) first(value[code == "a"]) else NA,
-    value_b = if(any(code == "b")) first(value[code == "b"]) else NA
+    title,
+   # title = first(value[code == "a"], default = NA_character_),
+    other_values = paste(value[code != "a"], collapse = " ")
   ) %>%
   transmute(
-    combined_value = case_when(
-      !is.na(value_a) & !is.na(value_b) ~ paste(value_a, value_b, sep = " "),
-      !is.na(value_a) ~ value_a,
-      !is.na(value_b) ~ value_b,
-      TRUE ~ NA_character_
+    combined_title = if_else(
+      is.na(title), 
+      other_values, 
+      if_else(
+        other_values == "", 
+        title, 
+        paste(title,": ", other_values, 
+              sep = "")
+      )
     )
   ) %>%
-  pull(combined_value)
+  pull(combined_title) %>%
+  str_replace_all("\\[.*?\\]\\s?.", "") %>%  # Remove content within square brackets and the first character after
+  str_trim()  # Trim whitespace
 ```
 
 ```{r}
