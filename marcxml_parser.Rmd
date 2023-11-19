@@ -15,7 +15,7 @@ library(purrr)
 
 ```{r}
 #url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?kind=książka&amp;title=Krytyka+czystego+rozumu"
-url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=30&amp;title=Krytyka+Czystego+Rozumu"
+url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Kroniki+Jakuba+Wędrowycza"
 response <- httr::GET(url)
 content <- httr::content(response, "text")
 ```
@@ -70,6 +70,11 @@ flattened <- parsed_records %>%
 ```
 
 ```{r}
+UWD <- flattened %>%
+  filter(tag == "015", code == "a") %>%
+  reframe(value = if(n() == 0) NA else first(value)) %>%
+  pull(value)
+
 
 book_id <- flattened %>%
   filter(tag == "035", code == "a") %>%
@@ -81,7 +86,7 @@ original_title <- flattened %>%
    reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
 # Check for original subtitle
-if (endsWith(original_title, ":")) {
+if (!is.na(original_title) && endsWith(original_title, ":")) {
   additional_value <- flattened %>%
     filter(tag == "246", code == "b") %>%
     summarize(value = first(value)) %>%
@@ -143,10 +148,7 @@ pages <- flattened %>%
   pull(value) %>%
   str_extract("\\d{1,5}")  # Extract the first occurrence of 1 to 5 digits
 
-translator <- flattened %>%
-  filter(tag == "700", code == "a") %>%
-  reframe(value = if(n() == 0) NA else first(value)) %>%
-  pull(value)
+
 
 language <- flattened %>%
   filter(tag == "041", code == "a") %>%
@@ -155,7 +157,17 @@ language <- flattened %>%
 
 original_language <- flattened %>%
   filter(tag == "041", code == "h") %>%
- reframe(value = if(n() == 0) NA else first(value)) %>%
+ reframe(value = if(n() == 0) language else first(value)) %>%
+  pull(value)
+
+# Defaulting to Polish if the values are empty
+if (is.na(language) && is.na(original_language)){
+  language <-"pol"
+}
+
+translator <- flattened %>%
+  filter(tag == "700", code == "a") %>%
+  reframe(value = if(n() == 0 || is.na(original_language)) NA else first(value)) %>%
   pull(value)
 
 ISBN <- flattened %>%
@@ -202,10 +214,15 @@ full_title <- flattened %>%
   pull(combined_title) %>%
   str_replace_all("\\[.*?\\]\\s?.", "") %>%  # Remove content within square brackets and the first character after
   str_trim()  # Trim whitespace
+
+genre <- flattened %>%
+  filter(tag == "655", code == "a") %>%
+  reframe(value = if(n() == 0) NA else first(value)) %>%
+  pull(value)
 ```
 
 ```{r}
-book_entry<-tibble(book_id,title,author,ISBN,OCLC,publisher, publish_place=NA,publish_year, pages=NA, language, original_language, original_title, translator)
+book_entry<-tibble(book_id,title,subtitle, full_title, author, genre ,ISBN,OCLC,publisher, publish_place,publish_year, pages, language, original_language, original_title, translator)
 ```
 
 Bibtex gen
