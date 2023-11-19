@@ -15,7 +15,7 @@ library(purrr)
 
 ```{r}
 #url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?kind=książka&amp;title=Krytyka+czystego+rozumu"
-url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Atomowe+Nawyki"
+url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?title=Krytyka+Czystego+Rozumu"
 response <- httr::GET(url)
 content <- httr::content(response, "text")
 ```
@@ -78,8 +78,18 @@ book_id <- flattened %>%
 
 original_title <- flattened %>%
   filter(tag == "246", code == "a") %>%
-   summarise(value = if(n() == 0) NA else first(value)) %>%
+   reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
+# Check for original subtitle
+if (endsWith(original_title, ":")) {
+  additional_value <- flattened %>%
+    filter(tag == "246", code == "b") %>%
+    summarize(value = first(value)) %>%
+    pull(value)
+  
+  original_title <- paste0(original_title, additional_value)
+}
+
 
 author <- flattened %>%
   filter(tag == "100", code == "a") %>%
@@ -94,7 +104,7 @@ title <- flattened %>%
 
 subtitle <- flattened %>%
   filter(tag == "245", code == "b") %>%
-     summarise(value = if(n() == 0) NA else first(value)) %>%
+     reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
 
 
@@ -102,13 +112,11 @@ publisher <- flattened %>%
   # Attempt to find value for tag 710, code a
   filter(tag == "710", code == "a") %>%
   reframe(value_710 = first(value, default = NA))
-
 # Get values for tag 260, code b and paste them together if there are multiple
 values_260 <- flattened %>%
   filter(tag == "260", code == "b") %>%
   pull(value) %>%
   paste(collapse = " ")
-
 # Conditional check and selection of publisher value
 if (is.na(publisher$value_710[1])) {
   publisher <- values_260
@@ -137,22 +145,23 @@ pages <- flattened %>%
 
 translator <- flattened %>%
   filter(tag == "700", code == "a") %>%
-  summarise(value = if(n() == 0) NA else first(value)) %>%
+  reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
 
 language <- flattened %>%
   filter(tag == "041", code == "a") %>%
-  summarise(value = if(n() == 0) NA else first(value)) %>%
+  reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
 
 original_language <- flattened %>%
   filter(tag == "041", code == "h") %>%
- summarise(value = if(n() == 0) NA else first(value)) %>%
+ reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
 
 ISBN <- flattened %>%
   filter(tag == "020", code == "a") %>%
-  pull(value)  # Extracting the 'value' column
+  reframe(value = if(n() == 0) NA else first(value)) %>%
+  pull(value)
 
 OCLC <- flattened %>%
   filter(tag == "035", code == "a") %>%
@@ -162,18 +171,18 @@ OCLC <- flattened %>%
 
 series <- flattened %>%
   filter(tag == "490", code == "a") %>%
-  summarise(value = if(n() == 0) NA else first(value)) %>%
+  reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
 
 series_volume <- flattened %>%
   filter(tag == "500", code == "a") %>%
-   summarise(value = if(n() == 0) NA else first(value)) %>%
+   reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
 
 full_title <- flattened %>%
   filter(tag == "245") %>%
   group_by(tag) %>%
-  summarise(
+  reframe(
     title,
    # title = first(value[code == "a"], default = NA_character_),
     other_values = paste(value[code != "a"], collapse = " ")
@@ -196,5 +205,31 @@ full_title <- flattened %>%
 ```
 
 ```{r}
-book_entry<-tibble(book_id,title,author,ISBN,OCLC,publisher, publish_place,publish_year, pages, language[1], original_language, original_title, translator)
+book_entry<-tibble(book_id,title,author,ISBN,OCLC,publisher, publish_place,publish_year, pages, language, original_language, original_title, translator)
+```
+
+Bibtex gen
+
+```{r}
+
+# Assuming 'book_entry' is your tibble
+generate_bibtex <- function(book_entry) {
+  entries <- apply(book_entry, 1, function(row) {
+    key <- paste0("book", gsub("-", "", row["book_id"]))
+    title <- row["title"]
+    author <- str_replace_all(row["author"], ", ", " and ")
+    year <- row["publish_year"]
+    publisher <- row["publisher"]
+
+    entry <- sprintf("@book{%s,\n  title = {%s},\n  author = {%s},\n  year = {%s},\n  publisher = {%s}\n}\n",
+                     key, title, author, year, publisher)
+    return(entry)
+  })
+
+  return(paste(entries, collapse = "\n"))
+}
+
+bibtex_output <- generate_bibtex(book_entry)
+cat(bibtex_output)  # Print the BibTeX entries
+
 ```
