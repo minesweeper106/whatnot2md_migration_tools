@@ -15,7 +15,7 @@ library(purrr)
 
 ```{r}
 #url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?kind=książka&amp;title=Krytyka+czystego+rozumu"
-url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?title=Krytyka+Czystego+Rozumu"
+url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=30&amp;title=Krytyka+Czystego+Rozumu"
 response <- httr::GET(url)
 content <- httr::content(response, "text")
 ```
@@ -66,11 +66,11 @@ parsed_records <- parsed_records %>%
 flattened <- parsed_records %>%
   unnest(fields) %>%
   unnest(cols = subfields) %>%
-  select(record_id, tag, code, value)
+  select(tag, code, value)
 ```
 
 ```{r}
-# Filtering the tibble to find the row with tag = "246" and code = "a"
+
 book_id <- flattened %>%
   filter(tag == "035", code == "a") %>%
   pull(value) %>%
@@ -205,7 +205,7 @@ full_title <- flattened %>%
 ```
 
 ```{r}
-book_entry<-tibble(book_id,title,author,ISBN,OCLC,publisher, publish_place,publish_year, pages, language, original_language, original_title, translator)
+book_entry<-tibble(book_id,title,author,ISBN,OCLC,publisher, publish_place=NA,publish_year, pages=NA, language, original_language, original_title, translator)
 ```
 
 Bibtex gen
@@ -217,7 +217,7 @@ generate_bibtex <- function(book_entry) {
   entries <- apply(book_entry, 1, function(row) {
     key <- paste0("book", gsub("-", "", row["book_id"]))
     title <- row["title"]
-    author <- str_replace_all(row["author"], ", ", " and ")
+   # author <- str_replace_all(row["author"], ", ", " and ")
     year <- row["publish_year"]
     publisher <- row["publisher"]
 
