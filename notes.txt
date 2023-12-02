@@ -1,0 +1,40 @@
+TODO
+
+nationalBibliographyNumber
+Numer bibliografii narodowej
+Przykład: B67-25185
+Pola Marc: 015|a
+
+---
+  
+domain
+Dziedzina i ujęcie
+
+Przykład: Edukacja i pedagogika
+Pola Marc: 658|a
+
+-----
+  
+  placeOfPublication
+Miejsce wydania
+
+Przykład: Polska
+Pola Marc: 751|a, 752|ad, 260|a, 
+  
+  
+  
+  
+----
+  
+  
+  
+Tytuł
+
+Przykład: Pani Bovary
+Pola Marc: 130|amnprlsko, 210|ab, 222|ab, 240|amnprlso, 242|abnpy, 245|abnp, 246|abnp, 247|abnpf, 505|t, 534|t, 700|tmnprlskof, 710|tmnprlskof, 711|tnplskfv, 730|amnprlskof, 740|a, 760|st, 762|st, 765|t, 767|st, 770|st, 772|st, 773|st, 774|st, 775|st, 776|st, 777|st, 780|st, 785|st, 787|st, 800|tmnprlskofv, 810|tmnprlskofv, 811|tnplskfv, 830|amnprlskofv
+
+-----
+  Autor
+
+Przykład: Myśliwski, Wiesław|d(1932- )
+Pola Marc: 100|abcd, 110|abndc, 111|andce, 700|abcd, 710|abndc, 720|a, 760|a, 762|a, 765|a, 767|a, 770|a, 772-777|a, 780|a, 785|a, 787|a, 800|abcd, 810|abndc, 811|andce

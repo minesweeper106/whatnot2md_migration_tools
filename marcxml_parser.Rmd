@@ -15,7 +15,7 @@ library(purrr)
 
 ```{r}
 #url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?kind=książka&amp;title=Narodziny+Fundacji"
-url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Narodziny+Fundacji"
+url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Ubik"
 response <- httr::GET(url)
 content <- httr::content(response, "text")
 ```
@@ -84,7 +84,8 @@ book_id <- flattened %>%
 original_title <- flattened %>%
   filter(tag == "246", code == "a") %>%
    reframe(value = if(n() == 0) NA else first(value)) %>%
-  pull(value)
+  pull(value) %>%
+str_remove(",$")
 # Check for original subtitle
 if (!is.na(original_title) && endsWith(original_title, ":")) {
   additional_value <- flattened %>%
@@ -191,7 +192,7 @@ series_volume <- flattened %>%
    reframe(value = if(n() == 0) NA else first(value)) %>%
   pull(value)
 
-full_title <- flattened %>%
+full_entry <- flattened %>%
   filter(tag == "245") %>%
   group_by(tag) %>%
   reframe(
@@ -222,7 +223,7 @@ genre <- flattened %>%
 ```
 
 ```{r}
-book_entry<-tibble(book_id,title,subtitle, full_title, author, genre ,ISBN,OCLC,publisher, publish_place,publish_year, pages, language, original_language, original_title, translator)
+book_entry<-tibble(book_id,title,subtitle, full_entry, author, genre ,ISBN,OCLC,publisher, publish_place,publish_year, pages, language, original_language, original_title, translator)
 ```
 
 Bibtex gen
