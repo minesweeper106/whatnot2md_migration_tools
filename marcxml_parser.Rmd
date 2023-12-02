@@ -14,8 +14,8 @@ library(purrr)
 ```
 
 ```{r}
-#url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?kind=książka&amp;title=Krytyka+czystego+rozumu"
-url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Kroniki+Jakuba+Wędrowycza"
+#url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?kind=książka&amp;title=Narodziny+Fundacji"
+url <- "https://data.bn.org.pl/api/institutions/bibs.marcxml?limit=1&amp;title=Narodziny+Fundacji"
 response <- httr::GET(url)
 content <- httr::content(response, "text")
 ```

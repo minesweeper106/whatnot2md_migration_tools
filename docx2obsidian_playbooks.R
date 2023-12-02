@@ -25,13 +25,13 @@ getGooglePlay <- function(title_docx, admonitions = TRUE) {
   # Cut empty rows
   text <- replace(text, is.na(text), "")
   text <- text %>% filter(text != '')
-  text <- text[2:4]
+  #text <- text[2:4]
   
   # Chapters as Headers
   text$text[text$style_name == "heading 2"] <-
     paste("###", text$text[text$style_name == "heading 2"], " \n", sep = " ")
   row_num <- which(startsWith(text$text, "##"))[1]
-  text <- text[row_num:length(text$text),]
+  text <- text[row_num:nrow(text),]
   
   # function to determine date format
   find_date_lang_format <- function(sample = text$text[2]) {
@@ -79,16 +79,8 @@ getGooglePlay <- function(title_docx, admonitions = TRUE) {
   }
   text$text <- unlist(lapply(text$text, remove_dates))
   
-  # Function to remove link from annotations
-  remove_links <- function(text) {
-    match <- unlist(gregexpr('HYPERLINK[^"]+"', text, perl = TRUE))
-    if (match > 0) {
-      text_clean <- gsub('\\s(HYPERLINK)\\s\"\\w.*\"\\s', '', text)
-      return(text_clean)
-    } else {
-      return(text)
-    }
-  }
+# remove links
+  text$text <- gsub('HYPERLINK ".*?"', '', text$text, perl=TRUE)
 
   quote_transform <- function(text, ...) {
     # Ignore headings
@@ -113,7 +105,7 @@ getGooglePlay <- function(title_docx, admonitions = TRUE) {
     return(paste(quotes, collapse = "\n\n"))
   }
   
-  text$text <- unlist(lapply(text$text, remove_links))
+  #text$text <- unlist(lapply(text$text, remove_links))
   text$text <- unlist(lapply(text$text, quote_transform))
   md_text <- paste(text$text, collapse = "\n\n")
   
