@@ -69,7 +69,7 @@ getGooglePlay <- function(title_docx, admonitions = TRUE) {
            stop("specify 'pl' or 'eng'"))
     
     # Replace the matching pattern with an empty string
-    text_mod <- str_replace(text, pattern, " Page ")
+    text_mod <- str_replace(text, pattern, "")
     
     # Trim any leading or trailing white space
     text_mod <- str_trim(text_mod)
@@ -81,33 +81,40 @@ getGooglePlay <- function(title_docx, admonitions = TRUE) {
   
 # remove links
   text$text <- gsub('HYPERLINK ".*?"', '', text$text, perl=TRUE)
-
+  text <- text %>% filter(text != '')
+  
+  if (admonitions == TRUE) {
+    quote_format <- "> [!quote] Page "
+  } else {
+    quote_format <- "> "
+  }
+  
   quote_transform <- function(text, ...) {
     # Ignore headings
     if (substr(text, 1, 2) == "##") {
       return(text)
-    }
-    
-    # Match the page number and quote, and capture them in separate groups
-    match <-
-      gregexpr("Page\\s\\d+\\s*(.*?)($|\n(?=Page))", text, perl = TRUE)
-    page_nums <- regmatches(text, match)[[1]]
-    text <- regmatches(text, match, invert = TRUE)[[1]]
-    
-    if (admonitions == TRUE) {
-      quote_format <- "> [!quote] "
     } else {
-      quote_format <- "> "
+      quotes <- paste0(quote_format, "\n> ", text)
+      return(paste(quotes, collapse = "\n\n"))
     }
     
-    # Format the quotes and page numbers
-    quotes <- paste0(quote_format, page_nums, "\n> ", text[1])
-    return(paste(quotes, collapse = "\n\n"))
   }
   
-  #text$text <- unlist(lapply(text$text, remove_links))
   text$text <- unlist(lapply(text$text, quote_transform))
+  
+  #changing the sequence
+  pattern_pages <- '\\d+.+'
+  pattern_target_position <- '(Page )'
+  last_number <- regmatches(text$text, regexpr(pattern_pages, text$text, perl = TRUE))
+  line_without_last_number <- sub(pattern_pages, "", text$text)
+  text$text <- sub(pattern_target_position, paste0("\\1", last_number), line_without_last_number)
+  
+
+  
+  
   md_text <- paste(text$text, collapse = "\n\n")
+  
+  
   
   title <- gsub('\\.docx', '', title_docx)
   title_md <- gsub('\\.docx', '.md', title_docx)
