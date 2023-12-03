@@ -62,7 +62,7 @@ ui <- grid_page(
       tabsetPanel(
         nav_panel(
           title = "BibTex",
-          textOutput(outputId = "textOutputBibtex")
+          verbatimTextOutput(outputId = "textOutputBibtex")
         ),
         nav_panel(
           title = "Yaml",
@@ -332,7 +332,7 @@ server <- function(input, output) {
     }
     
      bibtex_output <- generate_bibtex(book_entry)
-     print(bibtex_output)
+     print(bibtex_output, sep = " ")
   })
   
   })
